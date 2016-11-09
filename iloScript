@@ -1,0 +1,39 @@
+#! /bin/bash
+ipmitool lan print
+if [ $? -ne 0  ]
+then
+    modprobe ipmi_devintf
+    modprobe ipmi_si
+    echo "Modeprobe"
+fi
+channel=1
+#echo $channel
+ipmitool lan print $channel
+while [ $? -ne 0 ];do
+	#   echo $channel
+	channel=$((channel+1))
+	ipmitool lan print $channel
+done
+#echo $channel
+ipmitool -I open lan set $channel ipsrc static
+
+echo "Saisir l'adresse IP"
+read ip
+ipmitool lan set $channel ipaddr $ip
+ipmitool lan print $channel
+echo "Saisir le masque"
+read masque
+ipmitool lan set $channel netmask $masque
+
+echo "Saisir la gateway"
+read gateway
+ipmitool lan set $channel defgw ipaddr $gateway
+
+ipmitool lan set $channel access on
+ipmitool lan set $channel auth ADMIN MD5
+ipmitool user set name $channel admin
+ipmitool user set password $channel
+ipmitool user priv 2 4 $channel
+ipmitool user enable $channel
+ipmitool mc reset cold
+
